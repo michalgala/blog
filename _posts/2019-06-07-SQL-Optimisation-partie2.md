@@ -28,7 +28,7 @@ La méthode B-tree permet d'avoir un index désordonné dans la table Mysql, com
 Dans les sous-tables (feuilles) créées par la méthodes, les index sont ordonnés, et pointent vers les lignes de la table visible. Un niveau supplémentaire (nœud interne) pointe vers les feuilles (nœud final), la valeur de l'index de ce niveau correspond au dernier index (maximum dans le cas numérique) de chaque feuille.
 Avec cette architecture, MySQL peut rapidement trouver l'adresse de la/les lignes demandée(s) par l'utilisateur. 
 
-![btree_diag](/images/btree_diag.png)
+![](/images/btree_diag.png)
 
 Exemple:
 
