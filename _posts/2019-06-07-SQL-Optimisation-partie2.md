@@ -1,3 +1,11 @@
+---
+toc: true
+layout: post
+description: Optimisation de requêtes MySQL - Partie 2
+categories: [markdown]
+title: Optimisation de requêtes MySQL par indexation - Partie 2
+---
+
 # Optimisation de requêtes MySQL par indexation - Partie 2
 
 Dans cette seconde partie, nous allons voir l'importance des moteurs de stockage dans l'indexation, la spécificité de leur architecture, et leurs cas d'usage.
