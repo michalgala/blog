@@ -19,7 +19,7 @@ Pour comprendre les méthodes d'indexation, introduisons le concept d'ordre phys
 L'ordre physique est l'ordre de la variable que l'on observe dans la table, et l'ordre logique celui l'ordre enregistrée dans une table qui référence chacun des index de la table disponible pour l'utilisateur.
 Dans le diagramme ci-dessous, chaque index (Col1) de la table MySQL est présent dans une table ordonnée pointant vers la table MySQL (grâce au pointeur qui correspond à l'"adresse" de la ligne). 
 
-![physque_vs_logique](../images/physque_vs_logique.png)
+![physque_vs_logique]({{ site.baseurl }}/images/physque_vs_logique.png "physque_vs_logique")
 
 Les méthodes d'indexation utilisent cette logique. Nous allons étudier les trois principales: B-tree, B+tree et Hash.
 
@@ -29,7 +29,7 @@ La méthode B-tree permet d'avoir un index désordonné dans la table Mysql, com
 Dans les sous-tables (feuilles) créées par la méthodes, les index sont ordonnés, et pointent vers les lignes de la table visible. Un niveau supplémentaire (nœud interne) pointe vers les feuilles (nœud final), la valeur de l'index de ce niveau correspond au dernier index (maximum dans le cas numérique) de chaque feuille.
 Avec cette architecture, MySQL peut rapidement trouver l'adresse de la/les lignes demandée(s) par l'utilisateur. 
 
-![](../images/btree_diag.png)
+![btree_diag]({{ site.baseurl }}/images/btree_diag.png "btree_diag")
 
 Exemple:
 
@@ -43,7 +43,7 @@ Exemple:
 
 Dans la méthode B+tree, les index sont ordonnées dans la table visible de l'utilisateur. Par ailleurs, les feuilles sont connectées entre elles, et chacune pointe vers la suivante. S'affranchissant du besoin de reparcourir l'arbre, cette méthode est donc plus efficace pour la recherche d'une fourchette de valeurs, ou d'un index non-unique.
 
-![bptree_diag](../images/bptree_diag.png)
+![bptree_diag]({{ site.baseurl }}/images/bptree_diag.png "bptree_diag")
 
 :grey_exclamation:A la différence de la méthode B-tree, il n'y a pas de données enregistrées dans le nœud interne (branche). Le parcours peut donc être plus long pour la recherche d'une observation particulière, puisqu'il faut atteindre la nœud final pour obtenir l'adresse de la ligne.
 
