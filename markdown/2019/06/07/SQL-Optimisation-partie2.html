@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="twitter:card" content="summary_large_image" /><!-- Begin Jekyll SEO tag v2.6.1 -->
+<title>Optimisation de requêtes MySQL par indexation - Partie 2 | Pragmatic Statics &amp; ML</title>
+<meta name="generator" content="Jekyll v4.1.1" />
+<meta property="og:title" content="Optimisation de requêtes MySQL par indexation - Partie 2" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Optimisation de requêtes MySQL - Partie 2" />
+<meta property="og:description" content="Optimisation de requêtes MySQL - Partie 2" />
+<link rel="canonical" href="https://michalgala.github.io/blog/markdown/2019/06/07/SQL-Optimisation-partie2.html" />
+<meta property="og:url" content="https://michalgala.github.io/blog/markdown/2019/06/07/SQL-Optimisation-partie2.html" />
+<meta property="og:site_name" content="Pragmatic Statics &amp; ML" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2019-06-07T00:00:00-05:00" />
+<script type="application/ld+json">
+{"description":"Optimisation de requêtes MySQL - Partie 2","url":"https://michalgala.github.io/blog/markdown/2019/06/07/SQL-Optimisation-partie2.html","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://michalgala.github.io/blog/markdown/2019/06/07/SQL-Optimisation-partie2.html"},"headline":"Optimisation de requêtes MySQL par indexation - Partie 2","dateModified":"2019-06-07T00:00:00-05:00","datePublished":"2019-06-07T00:00:00-05:00","@context":"https://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/blog/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="https://michalgala.github.io/blog/feed.xml" title="Pragmatic Statics &amp; ML" /><link rel="shortcut icon" type="image/x-icon" href="/blog/images/favicon.ico"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Primer/15.2.0/primer.css" integrity="sha512-xTz2ys4coGAOz8vuV1NcQBkgVmKhsSEtjbqyMJbBHRplFuvKIUo6xhLHpAyPt9mfR6twHJgn9OgVLuqOvjeBhg==" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.14.0/css/all.min.css" integrity="sha512-1PKOgIY59xJ8Co8+NE6FZ+LOAZKjy+KY8iq0G4B3CyeY6wYHN3yt9PW0XpSriVlkMXe40PTKnXrLnZ9+fkDaog==" crossorigin="anonymous" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.12.0/katex.min.css" integrity="sha512-h7nl+xz8wgDlNM4NqKEM4F1NkIRS17M9+uJwIGwuo8vGqIl4BhuCKdxjWEINm+xyrUjNCnK5dCrhM0sj+wTIXw==" crossorigin="anonymous" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.12.0/katex.min.js" integrity="sha512-/CMIhXiDA3m2c9kzRyd97MTb3MC6OVnx4TElQ7fkkoRghwDf6gi41gaT1PwF270W6+J60uTmwgeRpNpJdRV6sg==" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.12.0/contrib/auto-render.min.js" integrity="sha512-Do7uJAaHZm5OLrIv/yN4w0iG1dbu01kzdMNnFfu/mAqgUk6Nniv2JYHcwH+cNwjqgLcqcuBBk+JRvprLVI8azg==" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha512-0doc9hKxR3PYwso42RD1p5ySZpzzuDiOwMrdCEh2WdJZCjcmFKc/wEnL+z8fBQrnHoiNWbo+3fiGkOYXBdQp4A==" crossorigin="anonymous"></script>
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        renderMathInElement( document.body, {
+        delimiters: [
+            {left: "$$", right: "$$", display: true},
+            {left: "[%", right: "%]", display: true},
+            {left: "$", right: "$", display: false}
+        ]}
+        );
+    });
+    </script>
+
+
+<script>
+function wrap_img(fn) {
+    if (document.attachEvent ? document.readyState === "complete" : document.readyState !== "loading") {
+        var elements = document.querySelectorAll(".post img");
+        Array.prototype.forEach.call(elements, function(el, i) {
+            if (el.getAttribute("title") && (el.className != "emoji")) {
+                const caption = document.createElement('figcaption');
+                var node = document.createTextNode(el.getAttribute("title"));
+                caption.appendChild(node);
+                const wrapper = document.createElement('figure');
+                wrapper.className = 'image';
+                el.parentNode.insertBefore(wrapper, el);
+                el.parentNode.removeChild(el);
+                wrapper.appendChild(el);
+                wrapper.appendChild(caption);
+            }
+        });
+    } else { document.addEventListener('DOMContentLoaded', fn); }
+}
+window.onload = wrap_img;
+</script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function(){
+    // add link icon to anchor tags
+    var elem = document.querySelectorAll(".anchor-link")
+    elem.forEach(e => (e.innerHTML = '<i class="fas fa-link fa-xs"></i>'));
+    });
+</script>
+</head>
+<body><header class="site-header">
+
+  <div class="wrapper">
+<a class="site-title" rel="author" href="/blog/">Pragmatic Statics &amp; ML</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger">
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewbox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"></path>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger">
+<a class="page-link" href="/blog/about/">About Me</a><a class="page-link" href="/blog/search/">Search</a><a class="page-link" href="/blog/categories/">Tags</a>
+</div>
+      </nav>
+</div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Optimisation de requêtes MySQL par indexation - Partie 2</h1>
+<p class="page-description">Optimisation de requêtes MySQL - Partie 2</p>
+<p class="post-meta post-meta-title"><time class="dt-published" datetime="2019-06-07T00:00:00-05:00" itemprop="datePublished">
+        Jun 7, 2019
+      </time>
+       • <span class="read-time" title="Estimated read time">
+    
+    
+      4 min read
+    
+</span></p>
+
+    
+      <p class="category-tags"><i class="fas fa-tags category-tags-icon"></i> 
+      
+        <a class="category-tags-link" href="/blog/categories/#markdown">markdown</a>
+        
+      
+      </p>
+    
+
+    </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <ul class="section-nav">
+<li class="toc-entry toc-h1">
+<a href="#optimisation-de-requ%C3%AAtes-mysql-par-indexation---partie-2">Optimisation de requêtes MySQL par indexation - Partie 2</a>
+<ul>
+<li class="toc-entry toc-h2">
+<a href="#m%C3%A9thodes-dindexation">Méthodes d’indexation</a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#b-tree">B-tree</a></li>
+<li class="toc-entry toc-h3"><a href="#btree">B+tree</a></li>
+<li class="toc-entry toc-h3"><a href="#hash">Hash</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2">
+<a href="#moteurs-de-stockage">Moteurs de stockage</a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#myisam">MyISAM</a></li>
+<li class="toc-entry toc-h3"><a href="#innodb">InnoDB</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h1 id="optimisation-de-requêtes-mysql-par-indexation---partie-2">
+<a class="anchor" href="#optimisation-de-requ%C3%AAtes-mysql-par-indexation---partie-2" aria-hidden="true"><span class="octicon octicon-link"></span></a>Optimisation de requêtes MySQL par indexation - Partie 2</h1>
+
+<p>Dans cette seconde partie, nous allons voir l’importance des moteurs de stockage dans l’indexation, la spécificité de leur architecture, et leurs cas d’usage.</p>
+
+<p>Nous allons étudier les deux principaux moteurs de stockage (storage engine), MyISAM et InnoDb, ainsi que trois méthodes d’indexation (B-tree, B+tree et Hash).</p>
+
+<h2 id="méthodes-dindexation">
+<a class="anchor" href="#m%C3%A9thodes-dindexation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Méthodes d’indexation</h2>
+
+<p>Pour comprendre les méthodes d’indexation, introduisons le concept d’ordre physique et logique.
+L’ordre physique est l’ordre de la variable que l’on observe dans la table, et l’ordre logique celui l’ordre enregistrée dans une table qui référence chacun des index de la table disponible pour l’utilisateur.
+Dans le diagramme ci-dessous, chaque index (Col1) de la table MySQL est présent dans une table ordonnée pointant vers la table MySQL (grâce au pointeur qui correspond à l’“adresse” de la ligne).</p>
+
+<p><img src="/home/michal/Documents/mooc/SQL/physque_vs_logique.png" alt="physque_vs_logique"></p>
+
+<p>Les méthodes d’indexation utilisent cette logique. Nous allons étudier les trois principales: B-tree, B+tree et Hash.</p>
+
+<h3 id="b-tree">
+<a class="anchor" href="#b-tree" aria-hidden="true"><span class="octicon octicon-link"></span></a>B-tree</h3>
+
+<p>La méthode B-tree permet d’avoir un index désordonné dans la table Mysql, comme c’est le cas dans l’illustration au dessus.
+Dans les sous-tables (feuilles) créées par la méthodes, les index sont ordonnés, et pointent vers les lignes de la table visible. Un niveau supplémentaire (nœud interne) pointe vers les feuilles (nœud final), la valeur de l’index de ce niveau correspond au dernier index (maximum dans le cas numérique) de chaque feuille.
+Avec cette architecture, MySQL peut rapidement trouver l’adresse de la/les lignes demandée(s) par l’utilisateur.</p>
+
+<p><img src="/home/michal/Documents/mooc/SQL/btree_diag.png" alt="btree_diag"></p>
+
+<p>Exemple:</p>
+
+<ul>
+  <li>l’utilisateur recherche la valeur 34 à partir d’une requête</li>
+  <li>Le nœud interne ne contient pas la valeur recherchée, mais indique à MySQL de rechercher la valeur dans le second nœud (34 se situant entre 28 et 72)</li>
+  <li>Une fois la valeur trouvée après le parcours de l’arbre, la ligne de la table est renvoyée à partir de son adresse (pointeur)</li>
+</ul>
+
+<p><img class="emoji" title=":warning:" alt=":warning:" src="https://github.githubassets.com/images/icons/emoji/unicode/26a0.png" height="20" width="20"> Si la clé n’est pas unique, ou que utilisateur requête une fourchette de valeurs (RANGE), l’algorithme doit parcourir toute la feuille (nœud final) pour s’assurer de trouver toutes les occurrences. Il doit par ailleurs reparcourir l’arbre si l’index “déborde” sur plusieurs feuilles. Plus une clé non-unique comporte de valeurs répétés, plus l’exécution risque d’être longue. De même pour les RANGE, l’exécution sera d’autant plus lente que plus la fourchette de valeurs est large.</p>
+
+<h3 id="btree">
+<a class="anchor" href="#btree" aria-hidden="true"><span class="octicon octicon-link"></span></a>B+tree</h3>
+
+<p>Dans la méthode B+tree, les index sont ordonnées dans la table visible de l’utilisateur. Par ailleurs, les feuilles sont connectées entre elles, et chacune pointe vers la suivante. S’affranchissant du besoin de reparcourir l’arbre, cette méthode est donc plus efficace pour la recherche d’une fourchette de valeurs, ou d’un index non-unique.</p>
+
+<p><img src="/home/michal/Documents/mooc/SQL/bptree_diag.png" alt="bptree_diag"></p>
+
+<p><img class="emoji" title=":grey_exclamation:" alt=":grey_exclamation:" src="https://github.githubassets.com/images/icons/emoji/unicode/2755.png" height="20" width="20">A la différence de la méthode B-tree, il n’y a pas de données enregistrées dans le nœud interne (branche). Le parcours peut donc être plus long pour la recherche d’une observation particulière, puisqu’il faut atteindre la nœud final pour obtenir l’adresse de la ligne.</p>
+
+<h3 id="hash">
+<a class="anchor" href="#hash" aria-hidden="true"><span class="octicon octicon-link"></span></a>Hash</h3>
+
+<p>Dans cette méthode, c’est une fonction de <em>hashing</em> qui donne l’adresse de la ligne (pointeur).
+L’adresse de la ligne est donc simplement obtenue en passant la valeur recherchée par la fonction, dont le résultat sera l’adresse (pointeur) de la ligne.
+Cette méthode est très efficace pour la recherche d’une observation particulière. 
+Elle est en revanche très limité pour une fourchette de valeurs, qui consiste en de multiples recherches individuelles, les résultats des fonctions de <em>hasing</em> étant aléatoires et non ordinales.</p>
+
+<h2 id="moteurs-de-stockage">
+<a class="anchor" href="#moteurs-de-stockage" aria-hidden="true"><span class="octicon octicon-link"></span></a>Moteurs de stockage</h2>
+
+<p>MySQL intègre plusieurs moteurs de stockage. Les deux principaux sont MyISAM, InnoDB. Chacun de ces moteurs dispose de sa propre implémentation des méthode d’indexation.</p>
+
+<h3 id="myisam">
+<a class="anchor" href="#myisam" aria-hidden="true"><span class="octicon octicon-link"></span></a>MyISAM</h3>
+
+<p>MyISAM utilise la structure B-tree pour les clés primaires, les clés uniques, ainsi que les index secondaires.
+Pour les index secondaires, un pointeur vers la clé primaire est enregistré (id ligne recherchée).</p>
+
+<p><img class="emoji" title=":warning:" alt=":warning:" src="https://github.githubassets.com/images/icons/emoji/unicode/26a0.png" height="20" width="20"> Les index sont gérés en mémoire, il est important que le paramètre <em>key_buffer_size</em> soit bien défini (sujet non traité dans cet article)</p>
+
+<h3 id="innodb">
+<a class="anchor" href="#innodb" aria-hidden="true"><span class="octicon octicon-link"></span></a>InnoDB</h3>
+
+<p>Le moteur InnoDB utilise la méthode B+tree pour la clé primaire.
+Pour les clés secondaires, c’est la méthode B-tree qui est utilisée. A la différence de MyISAM, la clé primaire et non son pointeur est enregistrée avec la clé secondaire.</p>
+
+<p><img class="emoji" title=":grey_exclamation:" alt=":grey_exclamation:" src="https://github.githubassets.com/images/icons/emoji/unicode/2755.png" height="20" width="20"> Le pointeur étant enregistré avec la clé secondaire dans MyISAM, il n’est pas nécessaire de reparcourir un arbre pour retrouver la ligne à renvoyer, contrairement à InnoDB.</p>
+
+<p><img class="emoji" title=":warning:" alt=":warning:" src="https://github.githubassets.com/images/icons/emoji/unicode/26a0.png" height="20" width="20"> Plus la valeur de la clé primaire est grande, plus la feuille prendra d’espace sur le disque.</p>
+
+<p><img class="emoji" title=":warning:" alt=":warning:" src="https://github.githubassets.com/images/icons/emoji/unicode/26a0.png" height="20" width="20"> InnoDB peut décider d’utiliser la méthode Hash pour la gestion des index. Voir la configuration de la variable <em>innodb_adaptive_hash_index</em>.</p>
+
+  </div>
+<a class="u-url" href="/blog/markdown/2019/06/07/SQL-Optimisation-partie2.html" hidden></a>
+</article>
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/blog/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="/blog/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/blog/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+      </div>
+      <div class="footer-col">
+        <p>Pragmatic Statics &amp; ML</p>
+      </div>
+    </div>
+
+    <div class="social-links">
+<ul class="social-media-list">
+<li><a rel="me" href="https://github.com/michalgala" title="michalgala"><svg class="svg-icon grey"><use xlink:href="/blog/assets/minima-social-icons.svg#github"></use></svg></a></li>
+<li><a rel="me" href="https://twitter.com/michalbg77" title="michalbg77"><svg class="svg-icon grey"><use xlink:href="/blog/assets/minima-social-icons.svg#twitter"></use></svg></a></li>
+</ul>
+</div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
