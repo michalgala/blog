@@ -1,3 +1,11 @@
+---
+toc: true
+layout: post
+description: Optimisation de requêtes MySQL - Partie 1 .
+categories: [markdown]
+title: Optimisation de requêtes MySQL par indexation - Partie 1
+---
+
 # Optimisation de requêtes MySQL par indexation - Partie 1
 
 L'indexation de variables est le principal levier d'amélioration de la performance des requêtes SQL. Dans cette série d'article nous allons présenter l'utilité des index, leur utilisation par MySQL pour l'exécution de requêtes, et leurs implications sur la performance.
