@@ -151,7 +151,7 @@ window.onload = wrap_img;
 L’ordre physique est l’ordre de la variable que l’on observe dans la table, et l’ordre logique celui l’ordre enregistrée dans une table qui référence chacun des index de la table disponible pour l’utilisateur.
 Dans le diagramme ci-dessous, chaque index (Col1) de la table MySQL est présent dans une table ordonnée pointant vers la table MySQL (grâce au pointeur qui correspond à l’“adresse” de la ligne).</p>
 
-<p><img src="https://raw.githubusercontent.com/michalgala/blog/master/images/physque_vs_logique.png" alt="physque_vs_logique"></p>
+<p><img src="/images/physque_vs_logique.png" alt="physque_vs_logique"></p>
 
 <p>Les méthodes d’indexation utilisent cette logique. Nous allons étudier les trois principales: B-tree, B+tree et Hash.</p>
 
@@ -162,7 +162,7 @@ Dans le diagramme ci-dessous, chaque index (Col1) de la table MySQL est présent
 Dans les sous-tables (feuilles) créées par la méthodes, les index sont ordonnés, et pointent vers les lignes de la table visible. Un niveau supplémentaire (nœud interne) pointe vers les feuilles (nœud final), la valeur de l’index de ce niveau correspond au dernier index (maximum dans le cas numérique) de chaque feuille.
 Avec cette architecture, MySQL peut rapidement trouver l’adresse de la/les lignes demandée(s) par l’utilisateur.</p>
 
-<p><img src="https://raw.githubusercontent.com/michalgala/blog/master/images/btree_diag.png" alt="btree_diag"></p>
+<p><img src="/images/btree_diag.png" alt="btree_diag"></p>
 
 <p>Exemple:</p>
 
