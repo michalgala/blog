@@ -18,7 +18,7 @@ Pour comprendre les méthodes d'indexation, introduisons le concept d'ordre phys
 L'ordre physique est l'ordre de la variable que l'on observe dans la table, et l'ordre logique celui l'ordre enregistrée dans une table qui référence chacun des index de la table disponible pour l'utilisateur.
 Dans le diagramme ci-dessous, chaque index (Col1) de la table MySQL est présent dans une table ordonnée pointant vers la table MySQL (grâce au pointeur qui correspond à l'"adresse" de la ligne). 
 
-![physque_vs_logique](/images/physque_vs_logique.png)
+![physque_vs_logique](./images/physque_vs_logique.png)
 
 Les méthodes d'indexation utilisent cette logique. Nous allons étudier les trois principales: B-tree, B+tree et Hash.
 
@@ -42,7 +42,7 @@ Exemple:
 
 Dans la méthode B+tree, les index sont ordonnées dans la table visible de l'utilisateur. Par ailleurs, les feuilles sont connectées entre elles, et chacune pointe vers la suivante. S'affranchissant du besoin de reparcourir l'arbre, cette méthode est donc plus efficace pour la recherche d'une fourchette de valeurs, ou d'un index non-unique.
 
-![bptree_diag](/images/bptree_diag.png)
+![bptree_diag](./images/bptree_diag.png)
 
 :grey_exclamation:A la différence de la méthode B-tree, il n'y a pas de données enregistrées dans le nœud interne (branche). Le parcours peut donc être plus long pour la recherche d'une observation particulière, puisqu'il faut atteindre la nœud final pour obtenir l'adresse de la ligne.
 
