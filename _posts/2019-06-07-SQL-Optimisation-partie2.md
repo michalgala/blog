@@ -3,6 +3,7 @@ toc: true
 layout: post
 description: Optimisation de requêtes MySQL - Partie 2
 categories: [markdown]
+comments: true
 title: Optimisation de requêtes MySQL par indexation - Partie 2
 ---
 
