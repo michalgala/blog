@@ -1,0 +1,232 @@
+<h1 id="optimisation-de-requêtes-mysql-par-indexation---partie-1">Optimisation de requêtes MySQL par indexation - Partie 1</h1>
+
+<p>L’indexation de variables est le principal levier d’amélioration de la performance des requêtes SQL. Dans cette série d’article nous allons présenter l’utilité des index, leur utilisation par MySQL pour l’exécution de requêtes, et leurs implications sur la performance.</p>
+
+<p>Dans cette première partie, à l’aide de la fonction EXPLAIN, nous allons voir comment MySQL exécute une requête, et étudier l’impact des index sur leur vitesse d’exécution.</p>
+
+<h5 id="données">Données</h5>
+
+<p>Les données utilisées sont issues du playground Kaggle “predict future sales”, auxquelles j’ai rajouté une clé unique auto-incrémentée pour les tables sans identifiant unique de ligne.</p>
+
+<h2 id="debug-de-requêtes">Debug de requêtes</h2>
+
+<p>MySQL utilise les index pour optimiser de nombreuses opérations: les requêtes simples, les jointures, les tris, les groupements et agrégations.</p>
+
+<p>En l’absence d’index, l’optimiseur parcourt toute la colonne à la recherche du critère indiqué dans la requête.
+Prenons l’exemple d’une requête basée sur la variable ‘index’ (clé primaire et donc index de la table sales_train), et de la variable item_id (simple colonne de la table, non indexée).</p>
+
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">SELECT</span> <span class="o">*</span>
+<span class="k">FROM</span> <span class="n">sales_train</span>
+<span class="k">WHERE</span> <span class="nv">`index`</span> <span class="o">=</span> <span class="mi">2000000</span>
+
+<span class="k">SELECT</span> <span class="o">*</span>
+<span class="k">FROM</span> <span class="n">sales_train</span>
+<span class="k">WHERE</span> <span class="n">item_id</span> <span class="o">=</span> <span class="mi">22169</span>
+</code></pre></div></div>
+
+<p>La première requête s’exécute quasi-instantanément (<strong>4ms</strong>), et la seconde 225 fois plus longtemps (<strong>900ms</strong>).
+Mysql donne la possibilité d’étudier le schéma d’exécution grâce à la fonction <strong>EXPLAIN</strong>, à ajouter en préfixe de la requête.</p>
+
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">EXPLAIN</span> <span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">sales_train</span> <span class="k">WHERE</span> <span class="nv">`index`</span> <span class="o">=</span> <span class="mi">2000000</span>
+<span class="k">EXPLAIN</span> <span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">sales_train</span> <span class="k">WHERE</span> <span class="n">item_id</span> <span class="o">=</span> <span class="mi">22169</span>
+</code></pre></div></div>
+
+<table>
+  <thead>
+    <tr>
+      <th> </th>
+      <th>table</th>
+      <th>type</th>
+      <th>possible_keys</th>
+      <th>key</th>
+      <th>rows</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1ère requête</td>
+      <td>sales_train</td>
+      <td>const</td>
+      <td>PRIMARY</td>
+      <td>PRIMARY</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>2de requête</td>
+      <td>sales_train</td>
+      <td>ALL</td>
+      <td>NULL</td>
+      <td>NULL</td>
+      <td>2722275</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Chaque requête précédée d’EXPLAIN, renvoie une table dont les colonnes qui nous concernent sont présentées dans le tableau ci-dessus.</p>
+
+<ul>
+  <li>Colonne <strong>rows</strong>: On y voit que la première requête examine 1 seule ligne, alors que la seconde parcourt toute la table, à savoir les 2 722 275 lignes correspondant au nombre total d’observations. (note: la requête n’étant pas exécutée, il s’agit en réalité d’approximations)</li>
+  <li>Colonnes <strong>key</strong>: On peut voir que la seconde requête n’utilise pas d’index pour son exécution, contrairement à la première</li>
+  <li>Colonne <strong>type</strong>: ALL dans cette colonne, et NULL dans la colonne key nous indique un scan de toute la table</li>
+</ul>
+
+<h2 id="optimisation-par-lajout-dindex">Optimisation par l’ajout d’index</h2>
+
+<h3 id="requête-simple">Requête simple</h3>
+
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">-- Dupliquer la table et ajouter indexer item_id</span>
+<span class="k">CREATE</span> <span class="k">TABLE</span> <span class="n">sales_train_test</span> <span class="k">LIKE</span> <span class="n">sales_train</span><span class="p">;</span>
+<span class="k">INSERT</span> <span class="k">INTO</span> <span class="n">sales_train_test</span> <span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">sales_train</span><span class="p">;</span>  
+<span class="k">ALTER</span> <span class="k">TABLE</span> <span class="n">sales_train_test</span> <span class="k">ADD</span> <span class="k">INDEX</span> <span class="nv">`item_id`</span> <span class="p">(</span><span class="nv">`item_id`</span><span class="p">);</span>
+
+<span class="c1">-- Requête</span>
+<span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">sales_train_test</span> <span class="k">WHERE</span> <span class="n">item_id</span> <span class="o">=</span> <span class="mi">22169</span><span class="p">;</span>
+<span class="k">EXPLAIN</span> <span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">sales_train_test</span> <span class="k">WHERE</span> <span class="n">item_id</span> <span class="o">=</span> <span class="mi">22169</span><span class="p">;</span>
+</code></pre></div></div>
+
+<p>Dans le premier bloc requête, une nouvelle table ‘sales_train_test’ est créée à partir de la table utilisée précédemment, et la variable ‘item_id’ y est indexée.
+Enfin, nous exécutons la même requête que dans la partie précédente, et nous voyons que cette fois-ci la requête s’exécute en <strong>6ms</strong> (contre <strong>900ms</strong> auparavant).</p>
+
+<table>
+  <thead>
+    <tr>
+      <th> </th>
+      <th>table</th>
+      <th>type</th>
+      <th>possible_keys</th>
+      <th>key</th>
+      <th>rows</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Sans index</td>
+      <td>sales_train</td>
+      <td>ALL</td>
+      <td>NULL</td>
+      <td>NULL</td>
+      <td>2722275</td>
+    </tr>
+    <tr>
+      <td>Avec index</td>
+      <td>sales_train_test</td>
+      <td>ref</td>
+      <td>item_id</td>
+      <td>item_id</td>
+      <td>1</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>La fonction EXPLAIN nous indique que l’optimiseur prend bien en compte l’index pour exécuter la requête, qui ne parcourt plus toutes les lignes à la recherche du critère.</p>
+
+<p><img class="emoji" title=":warning:" alt=":warning:" src="https://github.githubassets.com/images/icons/emoji/unicode/26a0.png" height="20" width="20"> L’ajout d’index n’améliore pas systématiquement la performance d’une requête. Nous en expliquerons les raisons dans les parties suivantes.</p>
+
+<h3 id="jointure">Jointure</h3>
+
+<p>Nous allons tester 3 cas de jointures. Le premier avec ‘item_id’ indexé dans les deux tables, le second dans une seule des deux tables, et enfin sans que la variable ne soit indexée.
+Le tableau ci dessous est le résultat de la fonction EXPLAIN, ainsi que le temps d’exécution pour un INNER JOIN des tables ‘sales_train’ (T1) et ‘items’ (T2) avec et sans index pour la variable de jointure ‘item_id’</p>
+
+<table>
+  <thead>
+    <tr>
+      <th> </th>
+      <th>Temps</th>
+      <th>type</th>
+      <th>key</th>
+      <th>rows</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>T1_index<br>T2_index</td>
+      <td><strong>7ms</strong></td>
+      <td>ref<br>ALL</td>
+      <td>item_id<br>NULL</td>
+      <td>124<br>22 418</td>
+    </tr>
+    <tr>
+      <td>T1_noindex<br>T2_index</td>
+      <td><strong>8ms</strong></td>
+      <td>ALL<br>eq_ref</td>
+      <td>NULL<br>PRIMARY</td>
+      <td>2 722 275<br>1</td>
+    </tr>
+    <tr>
+      <td>T1_index<br>T2_noindex</td>
+      <td><strong>7ms</strong></td>
+      <td>ref<br>ALL</td>
+      <td>item_id<br>NULL</td>
+      <td>124<br>21 432</td>
+    </tr>
+    <tr>
+      <td>T1_noindex<br>T2_noindex</td>
+      <td><strong>258ms</strong></td>
+      <td>ALL<br>ALL</td>
+      <td>NULL<br>NULL</td>
+      <td>2 722 275<br>21 432</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>On observe qu’en l’absence d’index la requête met près de 40 fois plus de temps à s’exécuter.</p>
+
+<h3 id="tri-groupements-agrégations">Tri, groupements, agrégations</h3>
+
+<p>L’utilisation d’index se révèle particulièrement efficace pour les opérations de tri et de groupement (qui trient les données afin de pouvoir former les groupes). Nous pouvons voir dans le tableau produit par la fonction EXPLAIN, que l’utilisation de l’index est beaucoup plus efficace que l’utilisation d’une table temporaire pour grouper les données, qui par ailleurs est enregistrée sur le disque si elle ne peut être contenue en mémoire (colonne <strong>Extra</strong>)<sup id="fnref:1" role="doc-noteref"><a href="#fn:1" class="footnote">1</a></sup></p>
+
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">-- Table originale</span>
+<span class="k">SELECT</span> <span class="n">item_id</span><span class="p">,</span> <span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span>
+<span class="k">FROM</span> <span class="n">sales_train</span>
+<span class="k">GROUP</span> <span class="k">BY</span> <span class="n">item_id</span>
+
+<span class="k">EXPLAIN</span> <span class="k">SELECT</span> <span class="p">...</span>
+
+<span class="c1">-- Table avec item_id en index</span>
+<span class="k">SELECT</span> <span class="n">item_id</span><span class="p">,</span> <span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span>
+<span class="k">FROM</span> <span class="n">sales_train_test</span>
+<span class="k">GROUP</span> <span class="k">BY</span> <span class="n">item_id</span>
+
+<span class="k">EXPLAIN</span> <span class="k">SELECT</span> <span class="p">...</span>
+</code></pre></div></div>
+
+<table>
+  <thead>
+    <tr>
+      <th> </th>
+      <th>type</th>
+      <th>possible_keys</th>
+      <th>key</th>
+      <th>rows</th>
+      <th>Extra</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Sans index (<strong>1630ms</strong>)</td>
+      <td>ALL</td>
+      <td>NULL</td>
+      <td>NULL</td>
+      <td>2722275</td>
+      <td>Using temporary<br>Using filesort</td>
+    </tr>
+    <tr>
+      <td>Avec index (<strong>7ms</strong>)</td>
+      <td>ref</td>
+      <td>item_id</td>
+      <td>item_id</td>
+      <td>1</td>
+      <td>Using index</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><img class="emoji" title=":warning:" alt=":warning:" src="https://github.githubassets.com/images/icons/emoji/unicode/26a0.png" height="20" width="20"> Avoir un index en variable de regroupement/tri ne garantit pas son utilisation par l’optimiseur</p>
+
+<div class="footnotes" role="doc-endnotes">
+  <ol>
+    <li id="fn:1" role="doc-endnote">
+      <p>http://s.petrunia.net/blog/?p=24 <a href="#fnref:1" class="reversefootnote" role="doc-backlink">↩</a></p>
+    </li>
+  </ol>
+</div>
